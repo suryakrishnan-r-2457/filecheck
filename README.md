@@ -6,6 +6,10 @@ This repository contains the complete architecture, design, and roadmap for a mo
 
 ## 📚 Documentation
 
+### 🎯 Start Here
+
+**[Executive Summary](./docs/EXECUTIVE_SUMMARY.md)** - Quick reference guide with all critical decisions, technology choices, and strategic overview
+
 ### Core Architecture Documents
 
 1. **[SIEM Architecture](./docs/SIEM_ARCHITECTURE.md)**
