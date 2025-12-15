@@ -204,7 +204,7 @@ This document outlines the strategic vision and development roadmap for the SIEM
 - Distributed tracing across security tools
 - Graph database for entity relationships
 - Real-time threat intelligence correlation
-- Advanced visualization (VR/AR for SOC)
+- Advanced visualization (3D threat mapping, interactive timelines)
 
 **New Capabilities:**
 - Identity threat detection and response (ITDR)

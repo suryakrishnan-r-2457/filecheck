@@ -813,21 +813,21 @@ CREATE INDEX idx_active_cases ON cases(created_at DESC)
 
 ### Initial Deployment (10K EPS)
 
-| Database      | Size      | IOPS   | Memory | CPU   |
-|--------------|-----------|--------|--------|-------|
-| Elasticsearch| 500GB     | 5000   | 64GB   | 16    |
-| ClickHouse   | 2TB       | 2000   | 32GB   | 8     |
-| PostgreSQL   | 100GB     | 3000   | 16GB   | 8     |
-| Redis        | 32GB      | 10000  | 32GB   | 4     |
+| Database      | Size      | IOPS   | Memory | CPU Cores |
+|--------------|-----------|--------|--------|-----------|
+| Elasticsearch| 500GB     | 5000   | 64GB   | 16        |
+| ClickHouse   | 2TB       | 2000   | 32GB   | 8         |
+| PostgreSQL   | 100GB     | 3000   | 16GB   | 8         |
+| Redis        | 32GB      | 10000  | 32GB   | 4         |
 
 ### Growth Projection (100K EPS)
 
-| Database      | Size      | IOPS   | Memory | CPU   |
-|--------------|-----------|--------|--------|-------|
-| Elasticsearch| 5TB       | 20000  | 256GB  | 64    |
-| ClickHouse   | 20TB      | 10000  | 128GB  | 32    |
-| PostgreSQL   | 500GB     | 5000   | 64GB   | 16    |
-| Redis        | 128GB     | 30000  | 128GB  | 16    |
+| Database      | Size      | IOPS   | Memory | CPU Cores |
+|--------------|-----------|--------|--------|-----------|
+| Elasticsearch| 5TB       | 20000  | 256GB  | 64        |
+| ClickHouse   | 20TB      | 10000  | 128GB  | 32        |
+| PostgreSQL   | 500GB     | 5000   | 64GB   | 16        |
+| Redis        | 128GB     | 30000  | 128GB  | 16        |
 
 ---
 

@@ -400,11 +400,17 @@ type NetworkCollector struct {
 }
 
 func (nc *NetworkCollector) Start(ctx context.Context) error {
-    // Monitor network connections
+    // TODO: Monitor network connections
     // Platform-specific implementation
-    // Linux: /proc/net/tcp, netlink
-    // Windows: GetTcpTable, GetUdpTable
-    // macOS: lsof, netstat
+    // Linux: /proc/net/tcp, netlink sockets
+    // Windows: GetTcpTable, GetUdpTable APIs
+    // macOS: lsof, netstat commands
+    
+    // Implementation would:
+    // 1. Subscribe to network events
+    // 2. Track connection state changes
+    // 3. Detect port scans and anomalies
+    // 4. Send events to eventChan
     
     return nil
 }
