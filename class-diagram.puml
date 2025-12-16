@@ -1,0 +1,584 @@
+@startuml Log360Cloud-DataSecurityPlus-ClassDiagram
+
+' ============================================================================
+' Log360Cloud and DataSecurity Plus Integration - Class Diagram
+' ============================================================================
+
+!define PRIMARY_COLOR #4A90E2
+!define SECONDARY_COLOR #50C878
+!define ACCENT_COLOR #F39C12
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor WHITE
+    BorderColor BLACK
+    ArrowColor BLACK
+}
+
+' ============================================================================
+' CORE ENTITIES
+' ============================================================================
+
+package "Core Entities" <<Rectangle>> {
+    
+    class Organization {
+        - orgId: UUID
+        - orgName: String
+        - createdDate: DateTime
+        - licenseType: String
+        - licenseExpiry: Date
+        - maxTenants: Integer
+        - maxAgents: Integer
+        - status: String
+        __
+        + createTenant(): Tenant
+        + getTenants(): List<Tenant>
+        + updateLicense(): Boolean
+        + suspend(): void
+    }
+    
+    class Tenant {
+        - tenantId: UUID
+        - orgId: UUID
+        - tenantName: String
+        - domain: String
+        - status: String
+        - maxUsers: Integer
+        - maxAgents: Integer
+        - storageQuotaGB: Integer
+        - dataRetentionDays: Integer
+        __
+        + createUser(): User
+        + createDepartment(): Department
+        + getDepartments(): List<Department>
+        + getUsers(): List<User>
+        + getAgents(): List<Agent>
+        + enforceQuota(): Boolean
+    }
+    
+    class Department {
+        - deptId: UUID
+        - tenantId: UUID
+        - deptName: String
+        - managerId: UUID
+        - parentDeptId: UUID
+        __
+        + addUser(user: User): Boolean
+        + removeUser(user: User): Boolean
+        + getUsers(): List<User>
+        + getSubDepartments(): List<Department>
+    }
+    
+    class User {
+        - userId: UUID
+        - tenantId: UUID
+        - username: String
+        - email: String
+        - passwordHash: String
+        - deptId: UUID
+        - roleId: UUID
+        - status: String
+        - mfaEnabled: Boolean
+        - lastLogin: DateTime
+        - failedLoginAttempts: Integer
+        __
+        + authenticate(password: String): Boolean
+        + enableMFA(): void
+        + getPermissions(): List<Permission>
+        + lockAccount(): void
+        + unlockAccount(): void
+        + resetPassword(): String
+    }
+    
+    class Role {
+        - roleId: UUID
+        - tenantId: UUID
+        - roleName: String
+        - description: String
+        - isSystemRole: Boolean
+        __
+        + addPermission(permission: Permission): void
+        + removePermission(permission: Permission): void
+        + getPermissions(): List<Permission>
+    }
+    
+    class Permission {
+        - permissionId: UUID
+        - roleId: UUID
+        - resourceType: String
+        - action: String
+        - granted: Boolean
+        __
+        + grant(): void
+        + revoke(): void
+    }
+}
+
+' ============================================================================
+' AGENT MANAGEMENT
+' ============================================================================
+
+package "Agent Management" <<Rectangle>> {
+    
+    abstract class Agent {
+        # agentId: UUID
+        # tenantId: UUID
+        # hostname: String
+        # ipAddress: String
+        # osType: String
+        # osVersion: String
+        # agentVersion: String
+        # status: AgentStatus
+        # installedDate: DateTime
+        # lastHeartbeat: DateTime
+        # cpuUsagePercent: Decimal
+        # memoryUsageMB: Integer
+        # diskUsageGB: Decimal
+        # bufferSizeMB: Integer
+        __
+        + {abstract} collectData(): void
+        + {abstract} sendData(): Boolean
+        + sendHeartbeat(): void
+        + updateStatus(status: AgentStatus): void
+        + updateConfiguration(config: JSON): Boolean
+        + getHealth(): HealthStatus
+        + restart(): Boolean
+        + upgrade(newVersion: String): Boolean
+    }
+    
+    class Log360Agent {
+        - logSources: List<LogSource>
+        - cloudEndpoint: String
+        - compressionEnabled: Boolean
+        - encryptionEnabled: Boolean
+        __
+        + collectData(): void
+        + sendData(): Boolean
+        + autoDiscover(): List<LogSource>
+        + addLogSource(source: LogSource): Boolean
+        + removeLogSource(source: LogSource): Boolean
+        + uploadLogs(): Boolean
+        + compressLogs(): Boolean
+    }
+    
+    class DLPAgent {
+        - monitoredPaths: List<String>
+        - policies: List<DLPPolicy>
+        - driverVersion: String
+        - deviceControlEnabled: Boolean
+        __
+        + collectData(): void
+        + sendData(): Boolean
+        + enforcePolicy(event: FileEvent): void
+        + blockDevice(deviceType: String): Boolean
+        + quarantineFile(filePath: String): Boolean
+        + scanFile(filePath: String): ScanResult
+        + installDriver(): Boolean
+    }
+    
+    class LogSource {
+        - logSourceId: UUID
+        - agentId: UUID
+        - sourceType: String
+        - sourceName: String
+        - enabled: Boolean
+        - autoDiscovered: Boolean
+        - lastCollectionTime: DateTime
+        - eventsCollectedCount: Long
+        __
+        + enable(): void
+        + disable(): void
+        + collect(): List<LogEntry>
+    }
+    
+    enum AgentStatus {
+        ONLINE
+        OFFLINE
+        DEGRADED
+        UPDATING
+        ERROR
+    }
+}
+
+' ============================================================================
+' EVENT MANAGEMENT
+' ============================================================================
+
+package "Event Management" <<Rectangle>> {
+    
+    abstract class Event {
+        # eventId: UUID
+        # tenantId: UUID
+        # timestamp: DateTime
+        # userId: UUID
+        # username: String
+        # severity: Severity
+        # eventType: String
+        # correlationId: UUID
+        __
+        + {abstract} correlate(): List<Event>
+        + {abstract} generateAlert(): Alert
+        + toJSON(): String
+        + archive(): Boolean
+        + getSeverityLevel(): Integer
+    }
+    
+    class SecurityEvent {
+        - sourceIp: String
+        - destIp: String
+        - sourcePort: Integer
+        - destPort: Integer
+        - protocol: String
+        - agentId: UUID
+        - logSource: String
+        - message: String
+        - rawLog: String
+        - indexed: Boolean
+        __
+        + correlate(): List<Event>
+        + generateAlert(): Alert
+        + analyze(): ThreatLevel
+        + extractIndicators(): List<IOC>
+        + enrich(): void
+    }
+    
+    class DLPEvent {
+        - filePath: String
+        - fileName: String
+        - fileSizeBytes: Long
+        - fileHash: String
+        - action: FileAction
+        - policyId: UUID
+        - policyName: String
+        - ruleViolated: String
+        - deviceType: String
+        - deviceId: String
+        - destinationPath: String
+        - actionTaken: String
+        - quarantine: Boolean
+        - quarantinePath: String
+        - alertSent: Boolean
+        - complianceTags: List<String>
+        __
+        + correlate(): List<Event>
+        + generateAlert(): Alert
+        + quarantineFile(): Boolean
+        + restoreFile(): Boolean
+        + notifyUser(): Boolean
+        + calculateRisk(): RiskScore
+    }
+    
+    enum Severity {
+        CRITICAL
+        HIGH
+        MEDIUM
+        LOW
+        INFO
+    }
+    
+    enum FileAction {
+        CREATE
+        MODIFY
+        DELETE
+        COPY
+        MOVE
+        PRINT
+        EMAIL
+        USB_TRANSFER
+        CLOUD_UPLOAD
+    }
+}
+
+' ============================================================================
+' POLICY MANAGEMENT
+' ============================================================================
+
+package "Policy Management" <<Rectangle>> {
+    
+    class DLPPolicy {
+        - policyId: UUID
+        - tenantId: UUID
+        - policyName: String
+        - description: String
+        - enabled: Boolean
+        - priority: Integer
+        - createdBy: UUID
+        - createdDate: DateTime
+        - modifiedBy: UUID
+        - modifiedDate: DateTime
+        __
+        + addRule(rule: DLPRule): Boolean
+        + removeRule(rule: DLPRule): Boolean
+        + evaluate(event: FileEvent): Boolean
+        + applyAction(action: String): void
+        + enable(): void
+        + disable(): void
+        + getRules(): List<DLPRule>
+    }
+    
+    class DLPRule {
+        - ruleId: UUID
+        - policyId: UUID
+        - ruleName: String
+        - ruleType: String
+        - conditionJSON: String
+        - action: String
+        - enabled: Boolean
+        - priority: Integer
+        __
+        + matches(content: String): Boolean
+        + evaluate(event: FileEvent): Boolean
+        + extractConditions(): Map<String, Object>
+        + enable(): void
+        + disable(): void
+    }
+    
+    class FileMetadata {
+        - fileId: UUID
+        - tenantId: UUID
+        - filePath: String
+        - fileName: String
+        - fileHash: String
+        - fileSizeBytes: Long
+        - fileType: String
+        - classification: String
+        - sensitivityLevel: Integer
+        - containsPII: Boolean
+        - containsPHI: Boolean
+        - containsPCI: Boolean
+        - lastScanDate: DateTime
+        __
+        + classify(): String
+        + scan(): ScanResult
+        + updateMetadata(): Boolean
+    }
+    
+    class DeviceTracking {
+        - deviceId: UUID
+        - tenantId: UUID
+        - deviceType: String
+        - deviceSerial: String
+        - deviceVendor: String
+        - deviceModel: String
+        - firstSeen: DateTime
+        - lastSeen: DateTime
+        - status: String
+        __
+        + allow(): void
+        + block(): void
+        + quarantine(): void
+        + getHistory(): List<DeviceEvent>
+    }
+}
+
+' ============================================================================
+' ALERT MANAGEMENT
+' ============================================================================
+
+package "Alert Management" <<Rectangle>> {
+    
+    class Alert {
+        - alertId: UUID
+        - tenantId: UUID
+        - eventId: UUID
+        - eventType: String
+        - ruleName: String
+        - alertType: String
+        - title: String
+        - description: String
+        - priority: Integer
+        - status: AlertStatus
+        - assignedTo: UUID
+        - createdAt: DateTime
+        - acknowledgedAt: DateTime
+        - resolvedAt: DateTime
+        - resolutionNotes: String
+        - falsePositive: Boolean
+        __
+        + escalate(): void
+        + resolve(notes: String): void
+        + assign(userId: UUID): void
+        + acknowledge(): void
+        + markFalsePositive(): void
+        + getTimeline(): List<AlertEvent>
+        + notify(): Boolean
+    }
+    
+    enum AlertStatus {
+        NEW
+        ASSIGNED
+        IN_PROGRESS
+        RESOLVED
+        CLOSED
+        ESCALATED
+    }
+}
+
+' ============================================================================
+' CORRELATION & INTEGRATION
+' ============================================================================
+
+package "Integration & Correlation" <<Rectangle>> {
+    
+    class SIEMIntegration {
+        - integrationId: UUID
+        - tenantId: UUID
+        - integrationName: String
+        - sourceSystem: String
+        - targetSystem: String
+        - protocol: String
+        - endpoint: String
+        - port: Integer
+        - format: String
+        - enabled: Boolean
+        - lastSuccessfulSend: DateTime
+        - totalEventsSent: Long
+        - totalErrors: Long
+        __
+        + forwardEvent(event: Event): Boolean
+        + testConnection(): Boolean
+        + enable(): void
+        + disable(): void
+        + getStatistics(): IntegrationStats
+        + retry(): Boolean
+    }
+    
+    class EventCorrelator {
+        - correlationRules: List<CorrelationRule>
+        - timeWindowMinutes: Integer
+        __
+        + correlateEvents(events: List<Event>): List<CorrelatedIncident>
+        + detectAnomalies(): List<Anomaly>
+        + addRule(rule: CorrelationRule): void
+        + removeRule(rule: CorrelationRule): void
+        + analyzePattern(events: List<Event>): Pattern
+    }
+    
+    class CorrelationRule {
+        - correlationRuleId: UUID
+        - tenantId: UUID
+        - ruleName: String
+        - description: String
+        - enabled: Boolean
+        - ruleDefinitionJSON: String
+        - timeWindowMinutes: Integer
+        - minEventCount: Integer
+        - severityThreshold: String
+        - action: String
+        __
+        + evaluate(events: List<Event>): Boolean
+        + trigger(): void
+        + enable(): void
+        + disable(): void
+    }
+    
+    class CorrelatedIncident {
+        - incidentId: UUID
+        - tenantId: UUID
+        - correlationRuleId: UUID
+        - incidentType: String
+        - title: String
+        - description: String
+        - confidenceScore: Decimal
+        - severity: String
+        - status: String
+        - relatedEvents: List<Event>
+        - createdAt: DateTime
+        - resolvedAt: DateTime
+        __
+        + addEvent(event: Event): void
+        + removeEvent(event: Event): void
+        + generateReport(): Report
+        + investigate(): InvestigationReport
+        + resolve(): void
+        + escalate(): void
+    }
+}
+
+' ============================================================================
+' AUDIT & COMPLIANCE
+' ============================================================================
+
+package "Audit & Compliance" <<Rectangle>> {
+    
+    class AuditLog {
+        - auditId: UUID
+        - tenantId: UUID
+        - userId: UUID
+        - action: String
+        - resourceType: String
+        - resourceId: UUID
+        - timestamp: DateTime
+        - ipAddress: String
+        - userAgent: String
+        - changesJSON: String
+        - success: Boolean
+        - errorMessage: String
+        __
+        + log(): void
+        + query(filters: Map): List<AuditLog>
+        + exportToCSV(): String
+    }
+    
+    class ComplianceReport {
+        - reportId: UUID
+        - tenantId: UUID
+        - reportType: String
+        - startDate: DateTime
+        - endDate: DateTime
+        - generatedBy: UUID
+        - generatedAt: DateTime
+        __
+        + generate(): Report
+        + export(format: String): File
+        + schedule(): Boolean
+    }
+}
+
+' ============================================================================
+' RELATIONSHIPS
+' ============================================================================
+
+' Core Entity Relationships
+Organization "1" --> "*" Tenant : manages
+Tenant "1" --> "*" User : has
+Tenant "1" --> "*" Department : contains
+Tenant "1" --> "*" Agent : monitors
+Department "1" --> "*" User : belongs to
+User "*" --> "1" Role : has
+Role "1" --> "*" Permission : grants
+
+' Agent Relationships
+Agent <|-- Log360Agent : extends
+Agent <|-- DLPAgent : extends
+Log360Agent "1" --> "*" LogSource : collects from
+DLPAgent "*" --> "*" DLPPolicy : enforces
+
+' Event Relationships
+Event <|-- SecurityEvent : extends
+Event <|-- DLPEvent : extends
+Agent "1" --> "*" Event : generates
+User "1" --> "*" Event : triggers
+Event "1" --> "0..1" Alert : creates
+
+' Policy Relationships
+DLPPolicy "1" --> "*" DLPRule : contains
+DLPEvent "*" --> "1" DLPPolicy : evaluated by
+FileMetadata "*" --> "1" User : owned by
+
+' Alert Relationships
+Alert "*" --> "1" User : assigned to
+
+' Integration Relationships
+SIEMIntegration --> Event : forwards
+EventCorrelator --> Event : analyzes
+EventCorrelator --> CorrelatedIncident : creates
+CorrelationRule "1" --> "*" CorrelatedIncident : triggers
+CorrelatedIncident "*" --> "*" Event : aggregates
+
+' Audit Relationships
+User "1" --> "*" AuditLog : generates
+Tenant "1" --> "*" AuditLog : tracks
+Tenant "1" --> "*" ComplianceReport : produces
+
+@enduml
