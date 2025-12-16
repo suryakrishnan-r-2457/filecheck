@@ -1,0 +1,87 @@
+@startuml DLP-SIEM-Integration-Sequence
+
+' ============================================================================
+' Sequence Diagram: DLP Event Flow to SIEM
+' ============================================================================
+
+title DLP Event Integration with Log360Cloud SIEM
+
+actor User
+participant "File System" as FS
+participant "DLP Agent\n(Minifilter)" as DLPAgent
+participant "DLP Engine" as DLPEngine
+participant "DataSecurity Plus\nServer" as DSPServer
+participant "Syslog Forwarder" as Syslog
+participant "Log360 Agent" as Log360Agent
+participant "Log360Cloud\nSIEM" as SIEM
+participant "SOC Analyst" as Analyst
+
+== File Activity Detection ==
+
+User -> FS: Copy sensitive file to USB
+activate FS
+FS -> DLPAgent: File operation intercepted
+activate DLPAgent
+DLPAgent -> DLPAgent: Capture file metadata\n(path, size, hash)
+
+== Policy Evaluation ==
+
+DLPAgent -> DLPEngine: Evaluate against policies
+activate DLPEngine
+DLPEngine -> DLPEngine: Check DLP rules:\n- Content patterns\n- Device type\n- User permissions
+DLPEngine --> DLPAgent: Policy violation detected\n(Action: BLOCK + ALERT)
+deactivate DLPEngine
+
+== Local Action ==
+
+DLPAgent -> FS: Block file transfer
+DLPAgent -> User: Display notification\n"Transfer blocked by DLP policy"
+DLPAgent -> DSPServer: Send DLP event
+deactivate DLPAgent
+deactivate FS
+
+activate DSPServer
+DSPServer -> DSPServer: Store event in local DB
+DSPServer -> DSPServer: Generate alert
+
+== SIEM Integration ==
+
+DSPServer -> Syslog: Forward event via Syslog\n(RFC 5424, JSON format)
+activate Syslog
+Syslog -> Log360Agent: Syslog message\n(TCP/UDP port 514)
+deactivate Syslog
+
+activate Log360Agent
+Log360Agent -> Log360Agent: Parse Syslog message\n(Extract DLP fields)
+Log360Agent -> Log360Agent: Enrich with context:\n- User details\n- Device info\n- Historical data
+
+== Cloud Upload ==
+
+Log360Agent -> SIEM: Upload encrypted event\n(HTTPS/TLS)
+activate SIEM
+SIEM -> SIEM: Index event
+SIEM -> SIEM: Correlate with security events:\n- Check user behavior\n- Check file access history\n- Apply correlation rules
+
+== Correlation & Alerting ==
+
+SIEM -> SIEM: Correlation match:\n"Insider Threat Pattern"
+SIEM -> SIEM: Create correlated incident:\n- Confidence: 95%\n- Severity: HIGH
+
+SIEM -> Analyst: Send alert\n(Email/Dashboard)
+activate Analyst
+
+== Investigation ==
+
+Analyst -> SIEM: Query related events
+SIEM --> Analyst: Return:\n- All DLP events (user)\n- Login events\n- File access patterns\n- USB device history
+
+Analyst -> Analyst: Investigate incident
+Analyst -> SIEM: Mark incident as confirmed
+Analyst -> DSPServer: Execute response action\n(Block USB devices)
+
+deactivate Analyst
+deactivate SIEM
+deactivate Log360Agent
+deactivate DSPServer
+
+@enduml

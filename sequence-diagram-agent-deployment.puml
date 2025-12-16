@@ -1,0 +1,126 @@
+@startuml Agent-Deployment-Sequence
+
+' ============================================================================
+' Sequence Diagram: Dual Agent Deployment
+' ============================================================================
+
+title Dual Agent Deployment Strategy (Log360 + DLP)
+
+actor "IT Administrator" as Admin
+participant "Management\nConsole" as Console
+participant "Target\nServer/Endpoint" as Target
+participant "Log360 Agent\nInstaller" as Log360Installer
+participant "DLP Agent\nInstaller" as DLPInstaller
+participant "Log360Cloud" as Cloud
+participant "DataSecurity Plus\nServer" as DSPServer
+
+== Phase 1: Log360 Agent Deployment ==
+
+Admin -> Console: Select target endpoints
+Admin -> Console: Deploy Log360 agents
+activate Console
+
+Console -> Target: Push Log360 agent installer
+activate Target
+Target -> Log360Installer: Execute installer
+activate Log360Installer
+
+Log360Installer -> Log360Installer: Check prerequisites:\n- OS version\n- Disk space\n- Network connectivity
+
+Log360Installer -> Target: Install service\n(Port: 8999, 9163)
+Log360Installer -> Target: Configure auto-discovery
+Log360Installer -> Target: Start Log360 service
+
+Log360Installer -> Cloud: Register agent\n(Send agent ID, hostname)
+activate Cloud
+Cloud --> Log360Installer: Confirm registration\n(Return config)
+deactivate Cloud
+
+Log360Installer -> Target: Apply configuration
+Log360Installer --> Console: Installation complete
+deactivate Log360Installer
+
+== Phase 2: DLP Agent Deployment ==
+
+Admin -> Console: Deploy DLP agents\n(Same or different endpoints)
+Console -> Target: Push DLP agent installer
+Target -> DLPInstaller: Execute installer
+activate DLPInstaller
+
+DLPInstaller -> DLPInstaller: Check for port conflicts
+note right
+  DLP installer detects Log360 agent
+  Automatically adjusts ports:
+  - Use port 8801 instead of 8800
+  - Use port 9164 instead of 9163
+end note
+
+DLPInstaller -> Target: Install minifilter driver
+DLPInstaller -> Target: Install DLP service\n(Port: 8801, 9164)
+DLPInstaller -> Target: Configure file monitoring
+DLPInstaller -> Target: Start DLP service
+
+DLPInstaller -> DSPServer: Register agent\n(Send agent ID, hostname)
+activate DSPServer
+DSPServer --> DLPInstaller: Confirm registration\n(Return policies)
+deactivate DSPServer
+
+DLPInstaller -> Target: Apply DLP policies
+DLPInstaller --> Console: Installation complete
+deactivate DLPInstaller
+
+== Phase 3: Verify Dual Agent Operation ==
+
+Console -> Target: Health check
+activate Target
+
+Target -> Target: Check Log360 service status
+Target --> Console: Log360 Agent: ONLINE
+
+Target -> Target: Check DLP service status
+Target --> Console: DLP Agent: ONLINE
+
+Target -> Target: Verify no port conflicts
+Target --> Console: All services operational
+
+deactivate Target
+deactivate Console
+
+== Phase 4: Configure Integration ==
+
+Admin -> DSPServer: Configure SIEM integration
+activate DSPServer
+Admin -> DSPServer: Set Syslog forwarding:\n- Target: Log360 Agent IP\n- Port: 514\n- Format: JSON
+
+DSPServer -> DSPServer: Test connection
+DSPServer --> Admin: Connection successful
+deactivate DSPServer
+
+Admin -> Cloud: Add custom log source
+activate Cloud
+Admin -> Cloud: Configure:\n- Source: DataSecurity Plus\n- Parser: Custom DLP parser
+Cloud --> Admin: Log source configured
+deactivate Cloud
+
+== Ongoing Operation ==
+
+Target -> Cloud: Send system logs\n(Log360 Agent)
+activate Cloud
+Cloud -> Cloud: Index logs
+deactivate Cloud
+
+Target -> DSPServer: Send DLP events\n(DLP Agent)
+activate DSPServer
+DSPServer -> Target: Forward to Log360 Agent\n(Syslog)
+deactivate DSPServer
+
+activate Target
+Target -> Cloud: Upload DLP events\n(via Log360 Agent)
+deactivate Target
+
+activate Cloud
+Cloud -> Cloud: Correlate DLP + Security events
+Cloud --> Admin: Unified dashboard updated
+deactivate Cloud
+
+@enduml
