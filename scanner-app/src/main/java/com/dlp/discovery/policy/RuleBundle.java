@@ -17,6 +17,9 @@ import java.util.Objects;
 
 public class RuleBundle {
     
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
+    
     private final String version;
     private final List<Rule> rules;
     private final Instant signatureTimestamp;
@@ -50,15 +53,11 @@ public class RuleBundle {
     }
     
     public static RuleBundle fromJson(String json) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        return mapper.readValue(json, RuleBundle.class);
+        return OBJECT_MAPPER.readValue(json, RuleBundle.class);
     }
     
     public static RuleBundle fromJson(InputStream inputStream) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        return mapper.readValue(inputStream, RuleBundle.class);
+        return OBJECT_MAPPER.readValue(inputStream, RuleBundle.class);
     }
     
     public static RuleBundle fromJsonFile(Path path) throws IOException {
