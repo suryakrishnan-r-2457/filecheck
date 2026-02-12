@@ -11,9 +11,9 @@ java {
 }
 
 dependencies {
-    // Parsing
-    implementation("org.apache.tika:tika-core:2.9.2")
-    implementation("org.apache.tika:tika-parsers-standard-package:2.9.2")
+    // Parsing - SECURITY: Updated to 3.0.0 to patch XXE vulnerabilities
+    implementation("org.apache.tika:tika-core:3.0.0")
+    implementation("org.apache.tika:tika-parsers-standard-package:3.0.0")
 
     // Detection
     implementation("com.google.re2j:re2j:1.7")
@@ -26,8 +26,8 @@ dependencies {
     implementation("net.java.dev.jna:jna:5.14.0")
     implementation("net.java.dev.jna:jna-platform:5.14.0")
 
-    // Serialization
-    implementation("com.google.protobuf:protobuf-java:3.25.2")
+    // Serialization - SECURITY: Updated to 3.25.5 to patch DoS vulnerability
+    implementation("com.google.protobuf:protobuf-java:3.25.5")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.1")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
@@ -45,7 +45,7 @@ dependencies {
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.assertj:assertj-core:3.25.3")
+    testImplementation("org.assertj:assertj-core:3.27.7")
     testImplementation("org.mockito:mockito-core:5.10.0")
     testImplementation("org.testcontainers:testcontainers:1.19.5")
 }
@@ -62,7 +62,7 @@ application {
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:3.25.2"
+        artifact = "com.google.protobuf:protoc:3.25.5"
     }
     generateProtoTasks {
         all().forEach { task ->
