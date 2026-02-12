@@ -30,6 +30,7 @@ dependencies {
     implementation("com.google.protobuf:protobuf-java:3.25.2")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.1")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
 
     // Crypto
     implementation("org.bouncycastle:bcprov-jdk18on:1.77")
