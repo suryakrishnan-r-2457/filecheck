@@ -1,0 +1,93 @@
+scanner:
+  # Target paths to scan
+  targets:
+    - "${user.home}/Documents"
+    - "${user.home}/Desktop"
+    - "${user.home}/Downloads"
+
+  # Exclusions
+  excludePaths:
+    - "**/node_modules/**"
+    - "**/\\.git/**"
+    - "C:/Windows/**"
+    - "C:/Program Files/**"
+    - "C:/Program Files (x86)/**"
+    - "**/*.exe"
+    - "**/*.dll"
+
+  # File filters
+  includeExtensions:
+    - ".pdf"
+    - ".doc"
+    - ".docx"
+    - ".pptx"
+    - ".xlsx"
+    - ".eml"
+    - ".msg"
+    - ".zip"
+    - ".txt"
+    - ".csv"
+    - ".rtf"
+  maxFileSizeBytes: 104857600  # 100 MB
+
+  # Scheduling
+  fullScanCronExpression: "0 2 * * SUN"   # Every Sunday at 2 AM
+  incrementalScanIntervalHours: 4
+  idleOnlyScanning: true
+  idleThresholdMinutes: 5
+
+  # Rate limiting
+  maxFilesPerSecond: 10
+  businessHoursCpuPercent: 20    # 08:00–18:00
+  offHoursCpuPercent: 80
+
+  # Parser limits
+  parser:
+    timeoutSeconds: 30
+    pdf:
+      maxPages: 500
+      maxStreamSizeMB: 64
+    ooxml:
+      maxEntries: 500
+      disableEntityExpansion: true
+      disableDTD: true
+    zip:
+      maxDepth: 3
+      maxEntries: 500
+      maxRatio: 100
+      maxCumulativeSizeMB: 256
+    ole2:
+      maxStreams: 50
+      skipMacros: true
+    eml:
+      maxMIMEParts: 100
+      maxRecursionDepth: 5
+
+  # Cache
+  cache:
+    path: "${programdata}/DLPScanner/cache"
+    maxEntries: 1000000
+
+  # Results storage
+  results:
+    dbPath: "${programdata}/DLPScanner/results.db"
+    maxSizeMB: 1024
+    uploadFullText: true  # only when findings exist
+
+  # Telemetry
+  telemetry:
+    dbPath: "${programdata}/DLPScanner/telemetry.db"
+    maxSizeMB: 500
+
+  # Management server
+  managementServer:
+    url: "https://dlp-mgmt.corp.com/api/v1"
+    uploadBatchSize: 50
+    uploadIntervalSeconds: 60
+    apiKeyEnvVar: "DLP_MGMT_API_KEY"
+
+  # Rules
+  rules:
+    path: "${programdata}/DLPScanner/rules"
+    autoReload: true
+    signatureVerification: true

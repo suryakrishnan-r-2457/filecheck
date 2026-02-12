@@ -1,0 +1,20 @@
+syntax = "proto3";
+package dlp.discovery.v1;
+
+option java_package = "com.dlp.discovery.proto";
+option java_outer_classname = "ScannerConfigProto";
+option java_multiple_files = true;
+
+message ScannerConfig {
+  repeated string target_paths     = 1;
+  repeated string exclude_paths    = 2;
+  repeated string include_extensions = 3;
+  uint64   max_file_size_bytes     = 4;
+  uint32   max_files_per_second    = 5;
+  uint32   full_scan_interval_hours = 6;
+  uint32   incremental_scan_interval_hours = 7;
+  uint32   parser_timeout_seconds  = 8;
+  bool     upload_full_text        = 9;
+  string   management_server_url   = 10;
+  string   rules_path              = 11;
+}

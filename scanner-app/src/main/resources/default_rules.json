@@ -1,0 +1,76 @@
+{
+  "version": "1.0",
+  "rules": [
+    {
+      "id": "SSN_FULL",
+      "name": "Social Security Number (Full)",
+      "category": "PII",
+      "severity": "HIGH",
+      "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+      "validator": "ssn",
+      "confidence": 0.9
+    },
+    {
+      "id": "SSN_COMPACT",
+      "name": "Social Security Number (Compact)",
+      "category": "PII",
+      "severity": "HIGH",
+      "pattern": "\\b\\d{9}\\b",
+      "validator": "ssn",
+      "confidence": 0.7,
+      "contextRequired": true
+    },
+    {
+      "id": "CCN_VISA",
+      "name": "Credit Card Number (Visa)",
+      "category": "PCI",
+      "severity": "CRITICAL",
+      "pattern": "\\b4\\d{15}\\b",
+      "validator": "luhn",
+      "confidence": 0.95
+    },
+    {
+      "id": "CCN_MASTERCARD",
+      "name": "Credit Card Number (MasterCard)",
+      "category": "PCI",
+      "severity": "CRITICAL",
+      "pattern": "\\b5[1-5]\\d{14}\\b",
+      "validator": "luhn",
+      "confidence": 0.95
+    },
+    {
+      "id": "CCN_AMEX",
+      "name": "Credit Card Number (American Express)",
+      "category": "PCI",
+      "severity": "CRITICAL",
+      "pattern": "\\b3[47]\\d{13}\\b",
+      "validator": "luhn",
+      "confidence": 0.95
+    },
+    {
+      "id": "CCN_DISCOVER",
+      "name": "Credit Card Number (Discover)",
+      "category": "PCI",
+      "severity": "CRITICAL",
+      "pattern": "\\b6(?:011|5\\d{2})\\d{12}\\b",
+      "validator": "luhn",
+      "confidence": 0.95
+    },
+    {
+      "id": "EMAIL",
+      "name": "Email Address",
+      "category": "PII",
+      "severity": "MEDIUM",
+      "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+      "confidence": 0.8
+    },
+    {
+      "id": "PHONE_US",
+      "name": "US Phone Number",
+      "category": "PII",
+      "severity": "LOW",
+      "pattern": "\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b",
+      "confidence": 0.6
+    }
+  ]
+}

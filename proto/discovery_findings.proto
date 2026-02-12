@@ -1,0 +1,73 @@
+syntax = "proto3";
+package dlp.discovery.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_package = "com.dlp.discovery.proto";
+option java_outer_classname = "DiscoveryFindings";
+option java_multiple_files = true;
+
+message ScanResult {
+  string   scan_id         = 1;
+  string   file_path       = 2;
+  string   file_hash       = 3;
+  uint64   file_size       = 4;
+  string   mime_type       = 5;
+  google.protobuf.Timestamp scan_timestamp = 6;
+  string   scan_version    = 7;
+  string   hostname        = 8;
+  string   user_upn        = 9;
+
+  repeated Finding findings = 10;
+  ParseStatus parse_status  = 11;
+  map<string, string> document_metadata = 12;
+
+  // Optional: only populated when findings exist and policy allows
+  string   extracted_text  = 13;
+
+  enum ParseStatus {
+    OK        = 0;
+    PARTIAL   = 1;
+    FAILED    = 2;
+    TIMEOUT   = 3;
+    ENCRYPTED = 4;
+    SKIPPED   = 5;  // cache hit
+  }
+}
+
+message Finding {
+  string   rule_id         = 1;
+  string   rule_name       = 2;
+  Severity severity        = 3;
+  string   category        = 4;
+  float    confidence      = 5;
+  string   redacted_snippet = 6;
+  uint32   offset          = 7;
+
+  enum Severity {
+    LOW      = 0;
+    MEDIUM   = 1;
+    HIGH     = 2;
+    CRITICAL = 3;
+  }
+}
+
+message ScanResultBatch {
+  repeated ScanResult results = 1;
+  ScanMetrics metrics         = 2;
+}
+
+message ScanMetrics {
+  string   hostname                = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  uint64   files_scanned           = 3;
+  uint64   files_with_findings     = 4;
+  uint64   total_findings          = 5;
+  uint64   cache_hits              = 6;
+  uint64   cache_misses            = 7;
+  uint64   parse_failures          = 8;
+  uint64   parse_timeouts          = 9;
+  uint64   bytes_processed         = 10;
+  uint32   scan_duration_seconds   = 11;
+  string   scan_version            = 12;
+}
