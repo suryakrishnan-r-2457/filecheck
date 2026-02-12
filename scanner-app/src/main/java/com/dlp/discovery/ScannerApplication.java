@@ -34,29 +34,83 @@ public class ScannerApplication {
             // Ensure required directories exist
             ensureDirectories(config);
 
-            // TODO: Initialize components
-            // PolicyStore policyStore = new PolicyStore(config.getScanner().getRules().getPath());
-            // DetectionEngine detection = new RegexDetectionEngine(policyStore.currentRules());
-            // TikaParserService parser = new TikaParserService(ParserConfig.fromParserSettings(config.getScanner().getParser()));
-            // HashCache hashCache = new HashCache(config.getScanner().getCache().getPath());
-            // ScanResultStore resultStore = new ScanResultStore(config.getScanner().getResults().getDbPath());
-            // TelemetryBuffer telemetry = new TelemetryBuffer(config.getScanner().getTelemetry().getDbPath());
+            // Initialize components
+            logger.info("Initializing scanner components...");
+            
+            ScannerConfig.ScannerSettings settings = config.getScanner();
+            
+            // Load detection rules
+            com.dlp.discovery.policy.PolicyStore policyStore = 
+                new com.dlp.discovery.policy.PolicyStore(settings.getRules().getPath());
+            logger.info("Rules loaded: version {}", policyStore.currentRules().getVersion());
+            
+            // Initialize detection engine
+            com.dlp.discovery.detection.DetectionEngine detection = 
+                new com.dlp.discovery.detection.RegexDetectionEngine(policyStore.currentRules());
+            
+            // Initialize parser with safety wrapper
+            com.dlp.discovery.parsing.ParserConfig parserConfig = 
+                com.dlp.discovery.parsing.ParserConfig.fromParserSettings(settings.getParser());
+            com.dlp.discovery.parsing.TikaParserService tikaParser = 
+                new com.dlp.discovery.parsing.TikaParserService(parserConfig);
+            com.dlp.discovery.parsing.SafeParserWrapper parser = 
+                new com.dlp.discovery.parsing.SafeParserWrapper(tikaParser, parserConfig);
+            
+            // Initialize hash cache
+            com.dlp.discovery.hashing.HashCache hashCache = 
+                new com.dlp.discovery.hashing.HashCache(settings.getCache().getPath());
+            
+            // Initialize result store
+            com.dlp.discovery.results.ScanResultStore resultStore = 
+                new com.dlp.discovery.results.ScanResultStore(settings.getResults().getDbPath());
+            
+            // Initialize content hasher
+            com.dlp.discovery.hashing.ContentHasher contentHasher = 
+                new com.dlp.discovery.hashing.ContentHasher();
+            
+            // Initialize file filter and walker
+            com.dlp.discovery.inventory.FileFilterChain filterChain = 
+                new com.dlp.discovery.inventory.FileFilterChain(
+                    settings.getIncludeExtensions(),
+                    settings.getExcludePaths(),
+                    settings.getMaxFileSizeBytes()
+                );
+            
+            java.util.List<java.nio.file.Path> targetPaths = settings.getTargets().stream()
+                .map(java.nio.file.Paths::get)
+                .collect(java.util.stream.Collectors.toList());
+            
+            com.dlp.discovery.inventory.FileInventoryWalker inventoryWalker = 
+                new com.dlp.discovery.inventory.FileInventoryWalker(targetPaths, filterChain);
+            
+            logger.info("All components initialized successfully");
 
-            // TODO: Start scheduler
-            // ScanScheduler scheduler = new ScanScheduler(config, detection, parser, hashCache, resultStore, telemetry);
-            // scheduler.start();
+            // Start scheduler
+            com.dlp.discovery.scheduler.ScanScheduler scheduler = 
+                new com.dlp.discovery.scheduler.ScanScheduler(
+                    config, detection, parser, hashCache, resultStore, 
+                    contentHasher, inventoryWalker
+                );
+            scheduler.start();
 
             logger.info("DLP Discovery Scanner started successfully");
 
-            // TODO: Register shutdown hook
-            // Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            //     logger.info("Shutting down DLP Discovery Scanner...");
-            //     scheduler.stop();
-            //     logger.info("DLP Discovery Scanner stopped");
-            // }));
+            // Register shutdown hook
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                logger.info("Shutting down DLP Discovery Scanner...");
+                try {
+                    scheduler.stop();
+                    parser.close();
+                    hashCache.close();
+                    resultStore.close();
+                    policyStore.close();
+                } catch (Exception e) {
+                    logger.error("Error during shutdown", e);
+                }
+                logger.info("DLP Discovery Scanner stopped");
+            }));
 
-            // For now, just keep the application running
-            logger.info("Scanner initialized. Components pending full implementation.");
+            // Keep the application running
             Thread.currentThread().join();
 
         } catch (Exception e) {
