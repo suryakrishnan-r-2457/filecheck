@@ -1,0 +1,65 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+*.gradle.kts.swp
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# NetBeans
+nb-configuration.xml
+nbactions.xml
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# Logs
+*.log
+logs/
+
+# Application specific
+cache/
+results.db
+telemetry.db
+*.db-journal
+*.lmdb
+*.lmdb-lock
+
+# Test files
+test-output/
+*.tmp
+
+# PNG files (screenshots)
+*.png
